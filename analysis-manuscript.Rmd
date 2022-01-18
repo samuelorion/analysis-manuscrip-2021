@@ -1,0 +1,185 @@
+---
+title: "analysis-manuscript"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(dabestr)
+library(FSA)
+library(rstatix)
+```
+
+## Nuclei (DAPI) count
+```{r figure-count-data, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+data <- 
+  read_csv(here("analysis-manuscript","derived-data", "count.csv")) %>% 
+   mutate(hydrogen_peroxide = as.factor(hydrogen_peroxide)) %>% 
+   mutate(neuron = as.factor(neuron)) %>% 
+  mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"))) %>% 
+   mutate(type = case_when(
+     neuron == "SN" ~ "pd-vulnerable", 
+     neuron == "LC" ~ "pd-vulnerable",
+     neuron == "R" ~ "pd-vulnerable",
+     neuron == "DMV" ~ "pd-vulnerable", 
+     neuron == "VTA" ~ "non-vulnerable",
+     neuron == "XII" ~ "non-vulnerable", 
+     neuron == "STR" ~ "non-vulnerable")) %>% 
+  group_by(image, neuron) %>% 
+  mutate(neuron_normalized = neuron_n / (mean(neuron_n[hydrogen_peroxide == 0], na.rm = TRUE))) %>% 
+  mutate(dapi_normalized = dapi_n / (mean(dapi_n[hydrogen_peroxide == 0], na.rm = TRUE))) %>% 
+  ungroup() %>% 
+  select(neuron, hydrogen_peroxide, type, neuron_normalized, dapi_normalized)
+
+```
+
+```{r figure-count-plot, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) + 
+  geom_point(aes(color = type), 
+             width = 0.3, 
+             size = 2, 
+             alpha = 0.1, 
+             position = position_dodge(width=1.3)) +
+  theme_bw() +
+  labs(
+    x = "", 
+    y = "normalized number of nuclei") +
+  geom_boxplot(aes(color = type), 
+               width = 0.2, 
+               alpha = 0.01,
+               position=position_dodge(width=0.8)) +
+  theme(
+    legend.position = "none") +
+  theme_classic() + 
+  geom_hline(
+    yintercept=1, 
+    color = "red", 
+    size=0.5, 
+    alpha = 0.2) +
+  geom_boxplot(fill = "Black", width = 0.1, 
+               alpha = 0.05, 
+               outlier.alpha = 0) +
+  ylim(0, 2)
+
+ggsave(here("analysis-manuscript", "plots", "count_dapi.pdf"))
+
+```
+
+### Supplimentary Table 1.1
+
+Kurskal-Wallis, TukeyHSD, PairwiseTtest
+
+```{r dapi_normalized_stats, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA}
+# stats 
+# not parametric compatible NHST
+kruskal.test(dapi_normalized ~ hydrogen_peroxide, data = data)
+
+stat <- dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni")
+
+knitr::kable(stat$res,digits = 3) 
+
+stat.test1 <- aov(dapi_normalized ~ type + hydrogen_peroxide, data = data)
+
+#summary(stat.test1)
+
+#shapiro.test(resid(stat.test1))
+
+#TukeyHSD(stat.test1)
+
+stat.test2 <- 
+  data %>% 
+  select(hydrogen_peroxide, type, dapi_normalized) %>%
+  group_by(hydrogen_peroxide) %>%
+  pairwise_t_test(
+    dapi_normalized ~ type, paired = FALSE, 
+    p.adjust.method = "bonferroni"
+    ) 
+
+
+knitr::kable(stat.test2, digits = 3)
+
+```
+
+
+
+## Neuron count 
+
+```{r neuron_normalized_plot, echo= FALSE, error = FALSE, message = FALSE, warning= FALSE}
+ggplot(data, aes(hydrogen_peroxide, neuron_normalized)) + 
+  geom_point(aes(color = type), 
+             width = 0.3, 
+             size = 2, 
+             alpha = 0.1, 
+             position = position_dodge(width=1.3)) +
+  theme_bw() +
+  labs(
+    x = "", 
+    y = "normalized number of 'positive' neurons") +
+  geom_boxplot(aes(color = type), 
+               width = 0.2, 
+               alpha = 0.01,
+               position=position_dodge(width=0.8)) +
+  theme(
+    legend.position = "none") +
+  theme_classic() + 
+  geom_hline(
+    yintercept=1, 
+    color = "red", 
+    size=0.5, 
+    alpha = 0.2) +
+  geom_boxplot(fill = "Black", width = 0.1, 
+               alpha = 0.1, 
+               outlier.alpha = 0)
+
+ggsave(here("analysis-manuscript", "plots", "count_neuron.pdf"))
+```
+
+### Supplimentary Table 1.2
+
+```{r neuron_normalized_stats, echo= FALSE, error = FALSE, message = FALSE, warning= FALSE}
+# stats 
+# not parametric compatible 
+kruskal.test(neuron_normalized ~ hydrogen_peroxide, data = data)
+  
+stat <- dunnTest(neuron_normalized ~ hydrogen_peroxide, data = data,
+         method="bonferroni")
+stat$res
+```
+
+
+
+## section heading
+
+```{r figure-section1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+summary(cars)
+
+```
+
+
+
+## section heading2
+
+```{r figure-section2, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+summary(cars)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
