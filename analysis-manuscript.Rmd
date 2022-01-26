@@ -12,13 +12,20 @@ library(here)
 library(dabestr)
 library(FSA)
 library(rstatix)
+library(see)
+library(ggridges)
+library(spatstat)
+
 ```
 
-## Nuclei (DAPI) count
-```{r figure-count-data, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+## PD-vulnerable neurons are more vulnerable to hydrogen peroxide than pd-resilient neurons
+
+### Nuclei (DAPI) count
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 data <- 
-  read_csv(here("analysis-manuscript","derived-data", "count.csv")) %>% 
+  read_csv(here("derived-data", "count.csv")) %>% 
    mutate(hydrogen_peroxide = as.factor(hydrogen_peroxide)) %>% 
    mutate(neuron = as.factor(neuron)) %>% 
   mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"))) %>% 
@@ -38,7 +45,7 @@ data <-
 
 ```
 
-```{r figure-count-plot, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="50%"}
 
 ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) + 
   geom_point(aes(color = type), 
@@ -67,31 +74,29 @@ ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) +
                outlier.alpha = 0) +
   ylim(0, 2)
 
-ggsave(here("analysis-manuscript", "plots", "count_dapi.pdf"))
+ggsave(here("plots", "count_dapi.pdf"))
 
 ```
 
-### Supplimentary Table 1.1
+### Supplimentary Tables n.n
 
-Kurskal-Wallis, TukeyHSD, PairwiseTtest
+Kurskal-Wallis
 
-```{r dapi_normalized_stats, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA}
-# stats 
-# not parametric compatible NHST
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(dapi_normalized ~ hydrogen_peroxide, data = data)
+```
 
-stat <- dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni")
+Dunn test
 
-knitr::kable(stat$res,digits = 3) 
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni")
 
+```
+
+PairwiseTtest
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 stat.test1 <- aov(dapi_normalized ~ type + hydrogen_peroxide, data = data)
-
-#summary(stat.test1)
-
-#shapiro.test(resid(stat.test1))
-
-#TukeyHSD(stat.test1)
-
 stat.test2 <- 
   data %>% 
   select(hydrogen_peroxide, type, dapi_normalized) %>%
@@ -100,17 +105,14 @@ stat.test2 <-
     dapi_normalized ~ type, paired = FALSE, 
     p.adjust.method = "bonferroni"
     ) 
-
-
-knitr::kable(stat.test2, digits = 3)
+print(stat.test2)
+# knitr::kable(stat.test2, digits = 3)
 
 ```
 
+### Neuron count
 
-
-## Neuron count 
-
-```{r neuron_normalized_plot, echo= FALSE, error = FALSE, message = FALSE, warning= FALSE}
+```{r echo= FALSE, error = FALSE, message = FALSE, warning= FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(hydrogen_peroxide, neuron_normalized)) + 
   geom_point(aes(color = type), 
              width = 0.3, 
@@ -137,49 +139,932 @@ ggplot(data, aes(hydrogen_peroxide, neuron_normalized)) +
                alpha = 0.1, 
                outlier.alpha = 0)
 
-ggsave(here("analysis-manuscript", "plots", "count_neuron.pdf"))
+ggsave(here("plots", "count_neuron.pdf"))
 ```
 
-### Supplimentary Table 1.2
+### Supplimentary Table n.n
 
-```{r neuron_normalized_stats, echo= FALSE, error = FALSE, message = FALSE, warning= FALSE}
-# stats 
-# not parametric compatible 
+Kurskal-Wallis
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(neuron_normalized ~ hydrogen_peroxide, data = data)
-  
-stat <- dunnTest(neuron_normalized ~ hydrogen_peroxide, data = data,
+```
+
+Dunn test
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(neuron_normalized ~ hydrogen_peroxide, data = data,
          method="bonferroni")
-stat$res
+```
+
+PairwiseTtest
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+stat.test1 <- aov(neuron_normalized ~ type + hydrogen_peroxide, data = data)
+stat.test2 <- 
+  data %>% 
+  select(hydrogen_peroxide, type, neuron_normalized) %>%
+  group_by(hydrogen_peroxide) %>%
+  pairwise_t_test(
+    neuron_normalized ~ type, paired = FALSE, 
+    p.adjust.method = "bonferroni"
+    ) 
+
+print(stat.test2)
+
+# knitr::kable(stat.test2, digits = 3)
+```
+
+## Differential vulnerability of neurons to hydrogen peroxide
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data, aes(neuron, neuron_normalized, fill = neuron)) + 
+  geom_jitter(width = 0.01, height = 0.3, size = 2, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "normalized number of neurons") +
+  geom_boxplot(aes(color = neuron), show.legend = FALSE, 
+               width = 0.15, 
+               alpha = 0.4, 
+               position = position_nudge(x = -0.2),
+               outlier.alpha = 0) +
+  theme_classic() + 
+  facet_wrap(~hydrogen_peroxide) +
+  geom_hline(yintercept=1, 
+                color = "red", size=0.5, alpha = 0.2) +
+  scale_y_continuous(limits = c(0, 2.5), oob = scales::squish) +
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+ 
+        strip.background = element_rect(colour="NA", fill="#899DA4"))
+
+ggsave(here("Plots", "count_neuron_compared.pdf"))
+```
+
+### Supplimentary Table n.n
+
+Kruskal-Wallis and Dunn test for each
+
+0 micromollar
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+#0 
+kruskal.test(neuron_normalized ~ neuron, 
+             data = data %>% 
+               filter(hydrogen_peroxide == "0"))
+  
+dunnTest(neuron_normalized ~ neuron, 
+         data = data %>% 
+               filter(hydrogen_peroxide == "0"),
+         method="bonferroni")
+```
+
+100 micromollar
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+# 100 
+kruskal.test(neuron_normalized ~ neuron, 
+             data = data %>% 
+               filter(hydrogen_peroxide == "100"))
+  
+dunnTest(neuron_normalized ~ neuron, 
+         data = data %>% 
+               filter(hydrogen_peroxide == "100"),
+         method="bonferroni")
+```
+
+150 micromollar
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+#150 
+kruskal.test(neuron_normalized ~ neuron, 
+             data = data %>% 
+               filter(hydrogen_peroxide == "150"))
+  
+dunnTest(neuron_normalized ~ neuron, 
+         data = data %>% 
+               filter(hydrogen_peroxide == "150"),
+         method="bonferroni")
+```
+
+200 micromollar
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+# 200 
+kruskal.test(neuron_normalized ~ neuron, 
+             data = data %>% 
+               filter(hydrogen_peroxide == "200"))
+  
+dunnTest(neuron_normalized ~ neuron, 
+         data = data %>% 
+               filter(hydrogen_peroxide == "200"),
+         method="bonferroni")
+```
+
+### Estimation statistics
+
+0 micromollar
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>% 
+  filter(hydrogen_peroxide == "0") %>% 
+  drop_na() %>% 
+  dabest(neuron, neuron_normalized, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot", 
+     effsize.ylim = c(-0.5, 1))
+
+ggsave(here("plots", "count_neuron_estimation_0.pdf"))
+
+shared.control.mean_diff 
+```
+
+100
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>% 
+  filter(hydrogen_peroxide == "100") %>% 
+  drop_na() %>% 
+  dabest(neuron, neuron_normalized, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot", 
+     effsize.ylim = c(-0.5, 1))
+
+ggsave(here("plots", "count_neuron_estimation_100.pdf"))
+
+shared.control.mean_diff 
+```
+
+150
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>% 
+  filter(hydrogen_peroxide == "150") %>% 
+  drop_na() %>% 
+  dabest(neuron, neuron_normalized, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot", 
+     effsize.ylim = c(-0.5, 1))
+
+ggsave(here("plots", "count_neuron_estimation_150.pdf"))
+
+shared.control.mean_diff 
+```
+
+200
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>% 
+  filter(hydrogen_peroxide == "200") %>% 
+  drop_na() %>% 
+  dabest(neuron, neuron_normalized, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot", 
+     effsize.ylim = c(-0.5, 1))
+
+ggsave(here("plots", "count_neuron_estimation_200.pdf"))
+
+shared.control.mean_diff 
+```
+
+## No overt difference in mitochondrial ROS production is observed between neurons
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+
+data <- 
+  read_csv(here("derived-data", "derived-roGFP.csv"))
+
+```
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+data_for_plotting_2 <- 
+data %>% 
+  group_by(ROI, neuron, field, type) %>% 
+  summarise(relative_oxidation = mean(relative_redox_state))
+
+#https://easystats.github.io/see/reference/geom_violinhalf.html   
+
+ggplot(data_for_plotting_2, aes(neuron, relative_oxidation)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(field == "axonal"), color = NA, alpha = 0.3, aes(fill = field)) +
+  geom_violinhalf(data = . %>% filter(field == "std"), color = NA, alpha = 0.3, aes(fill = field))
+
+ggsave(here("plots", "roGFP_1.pdf"))
+
+ggplot(data_for_plotting_2, aes(neuron, relative_oxidation)) +
+  theme_classic() +
+  geom_violinhalf(width = .5, fill = "black", alpha = 0.1) 
+
+ggsave(here("plots", "roGFP_4.pdf"))
+```
+
+### Supplimentary Table n.n
+
+Kruskal-Wallis
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(relative_oxidation ~ neuron, 
+             data = data_for_plotting_2)
+```
+
+Dunn
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(relative_oxidation ~ neuron, 
+             data = data_for_plotting_2, method="bonferroni")
+```
+
+Estimation statistics
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data_for_plotting_2 %>% 
+  dabest(neuron, relative_oxidation, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot", 
+     effsize.ylim = c(-0.2, .2))
+
+ggsave(here("Plots", "roGFP_5.pdf"))
+
+shared.control.mean_diff
+```
+
+## Comparing axonal vs std (note - very small effect - significant)
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data_for_plotting_2, aes(field, relative_oxidation)) +
+  geom_boxplot(width = 0.2, alpha = 0.1, aes(fill = type), position=position_dodge(.3), outlier.alpha = 0)
+
+axonal_only <- data_for_plotting_2 %>% filter(field == "axonal")
+std_only <- data_for_plotting_2 %>% filter(field == "axonal")
+```
+
+Welch Two Sample t-test - Axonal only
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+t.test(relative_oxidation ~ type, data = axonal_only)
+```
+
+Welch Two Sample t-test - STD only
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+t.test(relative_oxidation ~ type, data = std_only)
+```
+
+## Comparing vulnerable vs non-vulnerable - significant by very small effect size
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data_for_plotting_2, aes(type, relative_oxidation, fill = type)) +
+  #geom_point(size = 1, alpha = 0.3, aes(color = field), position = position_jitterdodge(0.05)) +
+  geom_boxplot(width = 0.2, alpha = 0.1)
+
+
+```
+
+Welch Two Sample t-test
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+t.test(relative_oxidation ~ type, data = data_for_plotting_2)
+```
+
+## Distance between mitochondria from roGFP experiments
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+data <- 
+  read_csv(here("derived-data", "derived-mito-distance.csv")) %>% 
+  pivot_longer(cols = 1:7, names_to ="neuron", values_to = "distance_um")
+
+data <- 
+  data %>%mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR")))
+
+ggplot(data, aes(neuron, distance_um)) +
+  theme_classic() +
+  geom_boxplot(aes(fill = neuron), width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(color = "black", fill = "black", alpha = 0.1)
+
+ggsave(here("plots", "intermitochondria-distance.pdf"))
+```
+### Supplimentary Tables n.n
+
+Kurskal-Wallis
+
+```{r 3, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(distance_um ~ neuron, data = data)
+```
+## PD-vulnerable neurons have large axonal domains, that are globally more complex than PD-resilient neurons
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+data <- 
+  read_csv(here("derived-data", "trace.csv")) %>% 
+  mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"))) %>% 
+  mutate(axon_area_per_neuron = axon_area_per_neuron/1.8274) %>% 
+  mutate(type = case_when(
+     neuron == "SN" ~ "pd-vulnerable", 
+     neuron == "LC" ~ "pd-vulnerable",
+     neuron == "R" ~ "pd-vulnerable",
+     neuron == "DMV" ~ "pd-vulnerable", 
+     neuron == "VTA" ~ "non-vulnerable",
+     neuron == "XII" ~ "non-vulnerable", 
+     neuron == "STR" ~ "non-vulnerable"))
+
+ggplot(data , aes(neuron, axon_area_per_neuron, fill = neuron)) + 
+  geom_jitter(width = 0.005, height = 0.3, size = 2, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "mean nueronal surface length (µm)") +
+  geom_boxplot(aes(color = neuron), 
+               show.legend = FALSE, 
+               width = 0.15, 
+               alpha = 0.4, 
+               position = position_nudge(x = -0.2),
+               outlier.alpha = 0) +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) +
+  scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
+
+ggsave(here("plots", "arbor_per_neuron.pdf"))
+
+```
+
+### Supplimentary Table n.n
+
+Kruskal-Wallis
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(axon_area_per_neuron ~ neuron, 
+             data = data)
+```
+
+Dunn
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(axon_area_per_neuron ~ neuron, 
+             data = data, method="bonferroni")
+```
+
+Estimation statistics
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>%
+  dabest(neuron, axon_area_per_neuron, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot")
+
+shared.control.mean_diff
+```
+
+Grouped by vulnerable and non-vulnerable
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+## for PD vs NON PD
+
+ggplot(data, aes(type, axon_area_per_neuron)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(type == "non-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  geom_violinhalf(data = . %>% filter(type == "pd-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  labs(x = "", y = "mean nueronal surface length (µm)") +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) +
+  scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
+
+ggsave(here("plots", "arbor_per_neuron_PD_nonPD.pdf"))
+
+# independent 2-group Mann-Whitney U Test
+wilcox.test(data$axon_area_per_neuron~data$type)
+
+two.group.unpaired <- 
+  data %>%
+  dabest(type, axon_area_per_neuron, 
+         # The idx below passes "Control" as the control group, 
+         # and "Group1" as the test group. The mean difference
+         # will be computed as mean(Group1) - mean(Control1).
+         idx = c("non-vulnerable", "pd-vulnerable"), 
+         paired = FALSE)
+
+two.group.unpaired 
+two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
+two.group.unpaired.meandiff
+
+plot(two.group.unpaired.meandiff, color.column = type)
+ggsave(here("plots", "arbor_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"))
+```
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data, aes(neuron, count_per_neuron, fill = neuron)) + 
+  geom_jitter(width = 0.01, height = 0.3, size = 2, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "segmentations per neurons") +
+  geom_boxplot(aes(color = neuron), 
+               show.legend = FALSE, 
+               width = 0.15, 
+               alpha = 0.4, 
+               position = position_nudge(x = -0.2),
+               outlier.alpha = 0) +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4"))
+
+ggsave(here("plots", "arbor_segmentation_per_neuron.pdf"))
+```
+
+Kruskal-Wallis
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(count_per_neuron ~ neuron, 
+             data = data)
+```
+
+Dunn
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(count_per_neuron ~ neuron, 
+             data = data, method="bonferroni")
+```
+
+Estimation statistics
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>%
+  dabest(neuron, count_per_neuron, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot")
+
+shared.control.mean_diff
+```
+Grouped by type
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data, aes(type, count_per_neuron)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(type == "non-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  geom_violinhalf(data = . %>% filter(type == "pd-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  labs(x = "", y = "Segmentations per neuron (mean)") +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) +
+  #scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
+
+ggsave(here("plots", "segmentations_per_neuron_PD_nonPD.pdf"))
+
+# independent 2-group Mann-Whitney U Test
+wilcox.test(data$count_per_neuron~data$type)
+
+two.group.unpaired <- 
+  data %>%
+  dabest(type, count_per_neuron, 
+         # The idx below passes "Control" as the control group, 
+         # and "Group1" as the test group. The mean difference
+         # will be computed as mean(Group1) - mean(Control1).
+         idx = c("non-vulnerable", "pd-vulnerable"), 
+         paired = FALSE)
+
+two.group.unpaired 
+two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
+two.group.unpaired.meandiff
+
+plot(two.group.unpaired.meandiff, color.column = type)
+ggsave(here("plots", "segmentations_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"))
+```
+
+### Average segmentation length (µm) 
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data, aes(neuron, `Average Size`, fill = neuron)) + 
+  geom_jitter(width = 0.01, height = 0.3, size = 2, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "Mean segmentation length (µm)") +
+  geom_boxplot(aes(color = neuron), 
+               show.legend = FALSE, 
+               width = 0.15, 
+               alpha = 0.4, 
+               position = position_nudge(x = -0.2),
+               outlier.alpha = 0) +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4"))
+
+ggsave(here("plots", "arbor_average_segmentation_per_neuron.pdf"))
+```
+
+Kruskal-Wallis
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(`Average Size` ~ neuron, 
+             data = data)
+```
+
+Dunn
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(`Average Size` ~ neuron, 
+             data = data, method="bonferroni")
+```
+
+Estimation statistics
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>%
+  dabest(neuron, `Average Size`, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot")
+
+shared.control.mean_diff
+```
+Comparing as groups 
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+
+# independent 2-group Mann-Whitney U Test
+wilcox.test(data$`Average Size`~data$type)
+
+two.group.unpaired <- 
+  data %>%
+  dabest(type, `Average Size`, 
+         # The idx below passes "Control" as the control group, 
+         # and "Group1" as the test group. The mean difference
+         # will be computed as mean(Group1) - mean(Control1).
+         idx = c("non-vulnerable", "pd-vulnerable"), 
+         paired = FALSE)
+
+two.group.unpaired 
+two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
+two.group.unpaired.meandiff
+
+plot(two.group.unpaired.meandiff, color.column = type)
+ggsave(here("plots", "arbor_average_segmentation_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"))
+
+```
+
+## PD-vulnerable neurons have a higher proportion of varicosities that are positive for Syt1
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+data_selected <- 
+  read_csv(here("derived-data", "derived-varicosity-data.csv")) %>% 
+  filter(between(Feret, 2, 25)) %>% 
+  filter(between(MinFeret, 2, 25)) %>% 
+  filter(AR < 5) %>% 
+  mutate(syt_status = case_when(Mean <= 122 ~ "negative", Mean > 122  ~ "positive"))
+
+data_percentage_syt1_positive <- 
+  data_selected %>% 
+  group_by(neuron, image, syt_status) %>% 
+  tally() %>% 
+  spread(syt_status, n) %>% 
+  mutate(percentage_syt1_positive = (positive/(negative+positive) * 100)) %>% 
+  ungroup()
 ```
 
 
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+distribution_plot <- 
+  ggplot(data_selected, aes(Mean,neuron, fill = neuron)) +
+   geom_density_ridges2(jittered_points = TRUE, 
+    quantile_lines = TRUE, 
+    quantiles = 5, 
+    scale = 0.9, 
+    alpha = 0.7,
+    vline_size = 0.8, 
+    vline_color = "red",
+    point_size = 0.5, 
+    point_alpha = 0.05,
+    position = position_raincloud(adjust_vlines = TRUE)) +
+  theme_classic() +
+  theme(legend.position = "none")
 
-## section heading
+distribution_plot +
+  coord_cartesian(xlim = c(0, 500)) +
+  xlab("Syt-1 intensity / varicosity") +
+  ylab("")
 
-```{r figure-section1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-
-summary(cars)
-
+ggsave(here("plots", "varicosites_ridges.pdf"))
 ```
 
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data_percentage_syt1_positive, 
+       aes(neuron, percentage_syt1_positive)) +
+  geom_jitter(width = 0.03, size = 3, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "syt-1 positive varicosities (%)") +
+  geom_boxplot(aes(color = neuron), width = 0.15, alpha = 0.01, position = position_nudge(x = -0.2)) +
+  theme(legend.position = "none") +
+  theme_classic()
 
-
-## section heading2
-
-```{r figure-section2, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
-
-summary(cars)
-
+ggsave(here("plots", "varicosites_percentage_positive.pdf"))
 ```
 
+### Supplimentary Table n.n
+
+Kruskal-Wallis
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(percentage_syt1_positive ~ neuron, data = data_percentage_syt1_positive)
+```
+Dunn
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(percentage_syt1_positive ~ neuron, data = data_percentage_syt1_positive, method="bonferroni")
+```
+Estimation statistics
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data_percentage_syt1_positive %>%
+  dabest(neuron, percentage_syt1_positive, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot")
+
+shared.control.mean_diff
+```
+PD vs non-PD
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+data_percentage_syt1_positive <- 
+  data_percentage_syt1_positive %>% 
+  mutate(type = case_when(
+     neuron == "SN" ~ "pd-vulnerable", 
+     neuron == "LC" ~ "pd-vulnerable",
+     neuron == "R" ~ "pd-vulnerable",
+     neuron == "DMV" ~ "pd-vulnerable", 
+     neuron == "VTA" ~ "non-vulnerable",
+     neuron == "XII" ~ "non-vulnerable", 
+     neuron == "STR" ~ "non-vulnerable"))
+
+wilcox.test(data_percentage_syt1_positive$percentage_syt1_positive~data_percentage_syt1_positive$type)
+
+two.group.unpaired <- 
+  data_percentage_syt1_positive %>%
+  dabest(type, percentage_syt1_positive, 
+         # The idx below passes "Control" as the control group, 
+         # and "Group1" as the test group. The mean difference
+         # will be computed as mean(Group1) - mean(Control1).
+         idx = c("non-vulnerable", "pd-vulnerable"), 
+         paired = FALSE)
+
+two.group.unpaired 
+two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
+two.group.unpaired.meandiff
+
+plot(two.group.unpaired.meandiff, color.column = type)
+ggsave(here("plots", "apercentage_syt1_positive_PD_nonPD-Gardner-Altman plot.pdf"))
+```
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+data_selected_nearest_neighbour <- 
+  data_selected %>% 
+  select(c(neuron, image, X, Y, syt_status, skeleton_axon_pixels, Mean, Area, Feret, MinFeret)) %>% 
+  group_by(image) %>% 
+  nest() %>% 
+  mutate(
+    nn = map(data, ~ nndist(.x$X, .x$Y, k = 1)), 
+    tidied = map(nn, tidy)) %>%  
+  unnest(tidied, data) %>%  
+  select(!c(nn, X, Y)) %>% 
+  rename(nearest_varicosity = x)
+
+varicosity_nn_length <- 
+  left_join(data_percentage_syt1_positive, data_selected_nearest_neighbour) %>% 
+  mutate(axon_per_var_px = skeleton_axon_pixels/(positive+negative)) %>% 
+  mutate(axon_per_positive_var_px = skeleton_axon_pixels/(positive))
+
+ggplot(varicosity_nn_length, aes((nearest_varicosity/4.83),neuron, fill = neuron)) +
+   geom_density_ridges2(jittered_points = TRUE, 
+    quantile_lines = TRUE, 
+    quantiles = 5, 
+    scale = 0.5, 
+    alpha = 0.7,
+    vline_size = 0.8, 
+    vline_color = "red",
+    point_size = 0.5, 
+    point_alpha = 0.02,
+    position = position_raincloud(adjust_vlines = TRUE)) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  xlab(expression(Log[10]~ "nearest varicosity (µm)")) +
+  scale_x_log10()
+  
+ggsave(here("plots", "varicosites_log_nearest_var.pdf"))
+```
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+mean_varicosity_nn_length <- 
+  varicosity_nn_length %>% 
+  select(c(neuron, image, nearest_varicosity)) %>% 
+  group_by(neuron, image) %>% 
+  summarise(mean_nearest_varicsotiey = mean((nearest_varicosity/4.83)), n = n()) %>% 
+  ungroup()
+
+ggplot(mean_varicosity_nn_length, 
+       aes(neuron, mean_nearest_varicsotiey)) +
+  geom_jitter(width = 0.03, size = 3, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "mean nearest varicosity (µm)") +
+  geom_boxplot(aes(color = neuron), width = 0.15, alpha = 0.01, position = position_nudge(x = -0.2)) +
+  theme(legend.position = "none") +
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 10))
+
+ggsave(here("plots", "varicosites_nearest_var.pdf"))
+```
+Kruskal-Wallis
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(mean_nearest_varicsotiey ~ neuron, data = mean_varicosity_nn_length)
+```
+Dunn
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(mean_nearest_varicsotiey ~ neuron, data = mean_varicosity_nn_length, method="bonferroni")  
+```
+Estimation Statistics
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  mean_varicosity_nn_length %>%
+  dabest(neuron, mean_nearest_varicsotiey, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot")
+
+shared.control.mean_diff
+```
+
+PD-vulnerable vs Non-vulnerable
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+mean_varicosity_nn_length <- 
+  mean_varicosity_nn_length %>% 
+    mutate(type = case_when(
+     neuron == "SN" ~ "pd-vulnerable", 
+     neuron == "LC" ~ "pd-vulnerable",
+     neuron == "R" ~ "pd-vulnerable",
+     neuron == "DMV" ~ "pd-vulnerable", 
+     neuron == "VTA" ~ "non-vulnerable",
+     neuron == "XII" ~ "non-vulnerable", 
+     neuron == "STR" ~ "non-vulnerable"))
 
 
+wilcox.test(mean_varicosity_nn_length$mean_nearest_varicsotiey~mean_varicosity_nn_length$type)
 
+two.group.unpaired <- 
+  mean_varicosity_nn_length %>%
+  dabest(type, mean_nearest_varicsotiey, 
+         # The idx below passes "Control" as the control group, 
+         # and "Group1" as the test group. The mean difference
+         # will be computed as mean(Group1) - mean(Control1).
+         idx = c("non-vulnerable", "pd-vulnerable"), 
+         paired = FALSE)
 
+two.group.unpaired 
+two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
+two.group.unpaired.meandiff
 
+plot(two.group.unpaired.meandiff, color.column = type)
+ggsave(here("plots", "varicosites_nearest_var_PD_nonPD-Gardner-Altman plot.pdf"))
+```
 
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+mean_varicosity_lengthpervar_length <- 
+  varicosity_nn_length %>% 
+  select(c(neuron, image, axon_per_var_px)) %>% 
+  group_by(neuron, image) %>% 
+  summarise(mean_axon_per_var_px = mean(axon_per_var_px), n = n()) %>% 
+  ungroup()
 
+ggplot(mean_varicosity_lengthpervar_length, 
+       aes(neuron, (mean_axon_per_var_px/4.83))) +
+  geom_jitter(width = 0.03, size = 3, alpha = 0.1) +
+  theme_bw() +
+  labs(x = "", y = "axon length / total varicosities (µm)") +
+  geom_boxplot(aes(color = neuron), width = 0.15, alpha = 0.01, position = position_nudge(x = -0.2)) +
+  theme(legend.position = "none") +
+  theme_classic() + 
+ # scale_y_log10()
+   coord_cartesian(ylim = c(0, 20))
 
+ggsave(here("plots", "varicosites_var_div_axon.pdf"))
+```
+Kruskal-Wallis
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+kruskal.test(mean_axon_per_var_px ~ neuron, data = mean_varicosity_lengthpervar_length)
+```
+Dunn
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(mean_axon_per_var_px ~ neuron, data = mean_varicosity_lengthpervar_length, method="bonferroni") 
+```
+Estimation Statistics
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  mean_varicosity_lengthpervar_length %>%
+  dabest(neuron, mean_axon_per_var_px, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
 
+shared.control.mean_diff <- shared.control %>% mean_diff()
 
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot")
 
+shared.control.mean_diff
+```
+
+PD-vulnerable vs Non-vulnerable
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+mean_varicosity_lengthpervar_length <- 
+  mean_varicosity_lengthpervar_length %>% 
+    mutate(type = case_when(
+     neuron == "SN" ~ "pd-vulnerable", 
+     neuron == "LC" ~ "pd-vulnerable",
+     neuron == "R" ~ "pd-vulnerable",
+     neuron == "DMV" ~ "pd-vulnerable", 
+     neuron == "VTA" ~ "non-vulnerable",
+     neuron == "XII" ~ "non-vulnerable", 
+     neuron == "STR" ~ "non-vulnerable"))
+
+wilcox.test(mean_varicosity_lengthpervar_length$mean_axon_per_var_px~mean_varicosity_lengthpervar_length$type)
+
+two.group.unpaired <- 
+  mean_varicosity_lengthpervar_length %>%
+  dabest(type, mean_axon_per_var_px, 
+         # The idx below passes "Control" as the control group, 
+         # and "Group1" as the test group. The mean difference
+         # will be computed as mean(Group1) - mean(Control1).
+         idx = c("non-vulnerable", "pd-vulnerable"), 
+         paired = FALSE)
+
+two.group.unpaired 
+two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
+two.group.unpaired.meandiff
+
+plot(two.group.unpaired.meandiff, color.column = type)
+ggsave(here("plots", "varicosites_var_div_axon_PD_nonPD-Gardner-Altman plot.pdf"))
+```
