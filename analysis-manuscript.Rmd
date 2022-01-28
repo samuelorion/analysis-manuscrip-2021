@@ -1,8 +1,9 @@
 ---
 title: "analysis-manuscript"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    toc: true
+    toc_depth: 2
 ---
 
 ```{r setup, include=FALSE}
@@ -18,9 +19,9 @@ library(spatstat)
 
 ```
 
-## PD-vulnerable neurons are more vulnerable to hydrogen peroxide than pd-resilient neurons
+## PD-vulnerable neurons are less resilient to cell stress induced by hydrogen peroxide 
 
-### Nuclei (DAPI) count
+Nuclei (DAPI) count
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -78,7 +79,7 @@ ggsave(here("plots", "count_dapi.pdf"))
 
 ```
 
-### Supplimentary Tables n.n
+### Supplementary Tables 1
 
 Kurskal-Wallis
 
@@ -142,7 +143,7 @@ ggplot(data, aes(hydrogen_peroxide, neuron_normalized)) +
 ggsave(here("plots", "count_neuron.pdf"))
 ```
 
-### Supplimentary Table n.n
+### Supplementary Tables 2
 
 Kurskal-Wallis
 
@@ -200,7 +201,7 @@ ggplot(data, aes(neuron, neuron_normalized, fill = neuron)) +
 ggsave(here("Plots", "count_neuron_compared.pdf"))
 ```
 
-### Supplimentary Table n.n
+### Supplementary Tables 3
 
 Kruskal-Wallis and Dunn test for each
 
@@ -285,7 +286,7 @@ ggsave(here("plots", "count_neuron_estimation_0.pdf"))
 shared.control.mean_diff 
 ```
 
-100
+100 micromollar
 
 ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
@@ -308,7 +309,7 @@ ggsave(here("plots", "count_neuron_estimation_100.pdf"))
 shared.control.mean_diff 
 ```
 
-150
+150 micromollar
 
 ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
@@ -331,7 +332,7 @@ ggsave(here("plots", "count_neuron_estimation_150.pdf"))
 shared.control.mean_diff 
 ```
 
-200
+200 micromollar
 
 ```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
@@ -386,7 +387,7 @@ ggplot(data_for_plotting_2, aes(neuron, relative_oxidation)) +
 ggsave(here("plots", "roGFP_4.pdf"))
 ```
 
-### Supplimentary Table n.n
+### Supplementary Tables 4
 
 Kruskal-Wallis
 
@@ -432,6 +433,7 @@ ggplot(data_for_plotting_2, aes(field, relative_oxidation)) +
 axonal_only <- data_for_plotting_2 %>% filter(field == "axonal")
 std_only <- data_for_plotting_2 %>% filter(field == "axonal")
 ```
+Supplementary Tables 4
 
 Welch Two Sample t-test - Axonal only
 
@@ -454,14 +456,14 @@ ggplot(data_for_plotting_2, aes(type, relative_oxidation, fill = type)) +
 
 
 ```
-
+Supplementary Tables 5
 Welch Two Sample t-test
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 t.test(relative_oxidation ~ type, data = data_for_plotting_2)
 ```
 
-## Distance between mitochondria from roGFP experiments
+## Intermitochondrial distance (roGFP)
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data <- 
@@ -478,13 +480,23 @@ ggplot(data, aes(neuron, distance_um)) +
 
 ggsave(here("plots", "intermitochondria-distance.pdf"))
 ```
-### Supplimentary Tables n.n
+### Supplementary Tables 6
+```{r eval=FALSE, message=FALSE, include=FALSE, paged.print=FALSE}
+mean(data$distance_um, na.rm=TRUE)
+
+sd(data$distance_um, na.rm=TRUE)
+
+```
 
 Kurskal-Wallis
 
 ```{r 3, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(distance_um ~ neuron, data = data)
+
 ```
+
+Estimation statistics — not applicable
+
 ## PD-vulnerable neurons have large axonal domains, that are globally more complex than PD-resilient neurons
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
@@ -521,7 +533,7 @@ ggsave(here("plots", "arbor_per_neuron.pdf"))
 
 ```
 
-### Supplimentary Table n.n
+### Supplimentary Tables 7
 
 Kruskal-Wallis
 
@@ -735,7 +747,19 @@ shared.control.mean_diff
 Comparing as groups 
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggplot(data, aes(type, `Average Size`)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(type == "non-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  geom_violinhalf(data = . %>% filter(type == "pd-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  labs(x = "", y = "Segmentations per neuron (mean)") +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) 
+  #scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
 
+ggsave(here("plots", "arbor_average_segmentation_per_neuron_PD_nonPD.pdf"))
 # independent 2-group Mann-Whitney U Test
 wilcox.test(data$`Average Size`~data$type)
 
@@ -765,7 +789,8 @@ data_selected <-
   filter(between(Feret, 2, 25)) %>% 
   filter(between(MinFeret, 2, 25)) %>% 
   filter(AR < 5) %>% 
-  mutate(syt_status = case_when(Mean <= 122 ~ "negative", Mean > 122  ~ "positive"))
+  mutate(syt_status = case_when(Mean <= 122 ~ "negative", Mean > 122  ~ "positive")) %>% 
+  mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR")))
 
 data_percentage_syt1_positive <- 
   data_selected %>% 
@@ -855,6 +880,20 @@ data_percentage_syt1_positive <-
      neuron == "XII" ~ "non-vulnerable", 
      neuron == "STR" ~ "non-vulnerable"))
 
+ggplot(data_percentage_syt1_positive, aes(type, percentage_syt1_positive)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(type == "non-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  geom_violinhalf(data = . %>% filter(type == "pd-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  labs(x = "", y = "percentage_syt1_positive") +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) 
+  #scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
+
+ggsave(here("plots", "percentage_syt1_positive_PD_nonPD_PD_nonPD.pdf"))
+
 wilcox.test(data_percentage_syt1_positive$percentage_syt1_positive~data_percentage_syt1_positive$type)
 
 two.group.unpaired <- 
@@ -871,7 +910,7 @@ two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
 two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
-ggsave(here("plots", "apercentage_syt1_positive_PD_nonPD-Gardner-Altman plot.pdf"))
+ggsave(here("plots", "percentage_syt1_positive_PD_nonPD-Gardner-Altman plot.pdf"))
 ```
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
@@ -971,6 +1010,20 @@ mean_varicosity_nn_length <-
      neuron == "STR" ~ "non-vulnerable"))
 
 
+ggplot(mean_varicosity_nn_length, aes(type, mean_nearest_varicsotiey)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(type == "non-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  geom_violinhalf(data = . %>% filter(type == "pd-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  labs(x = "", y = "mean_nearest_varicsotiey") +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) 
+  #scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
+
+ggsave(here("plots", "mean_nearest_varicsotiey_PD_nonPD_PD_nonPD.pdf"))
+
 wilcox.test(mean_varicosity_nn_length$mean_nearest_varicsotiey~mean_varicosity_nn_length$type)
 
 two.group.unpaired <- 
@@ -997,6 +1050,7 @@ mean_varicosity_lengthpervar_length <-
   group_by(neuron, image) %>% 
   summarise(mean_axon_per_var_px = mean(axon_per_var_px), n = n()) %>% 
   ungroup()
+  
 
 ggplot(mean_varicosity_lengthpervar_length, 
        aes(neuron, (mean_axon_per_var_px/4.83))) +
@@ -1049,6 +1103,20 @@ mean_varicosity_lengthpervar_length <-
      neuron == "VTA" ~ "non-vulnerable",
      neuron == "XII" ~ "non-vulnerable", 
      neuron == "STR" ~ "non-vulnerable"))
+
+ggplot(mean_varicosity_lengthpervar_length, aes(type, mean_axon_per_var_px)) +
+  theme_classic() +
+  geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
+  geom_violinhalf(data = . %>% filter(type == "non-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  geom_violinhalf(data = . %>% filter(type == "pd-vulnerable"), color = NA, alpha = 0.3, aes(fill = type)) +
+  labs(x = "", y = "mean_axon_per_var_px") +
+  theme_classic() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=12, face="bold"),
+        strip.background = element_rect(colour="NA", fill="#899DA4")) 
+  #scale_y_continuous(limits = c(0, 40000), oob = scales::squish)
+
+ggsave(here("plots", "mean_axon_per_var_px_PD_nonPD_PD_nonPD.pdf"))
 
 wilcox.test(mean_varicosity_lengthpervar_length$mean_axon_per_var_px~mean_varicosity_lengthpervar_length$type)
 
