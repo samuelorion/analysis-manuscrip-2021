@@ -3,7 +3,7 @@ title: "Supplementary data and figures"
 output:
   pdf_document:
     toc: true
-    toc_depth: 3
+    toc_depth: 2
 ---
 
 ```{r setup, include=FALSE}
@@ -19,6 +19,7 @@ library(spatstat)
 ```
 
 # PD-vulnerable neurons are less resilient to cell stress induced by hydrogen peroxide
+
 ## Supplementary Tables 1
 
 Nuclei (DAPI) count
@@ -93,6 +94,7 @@ dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni"
 ```
 
 Neuron count
+
 ## Supplementary Tables 2
 
 ```{r echo= FALSE, error = FALSE, message = FALSE, warning= FALSE, comment = NA, out.width="50%"}
@@ -139,6 +141,7 @@ dunnTest(neuron_normalized ~ hydrogen_peroxide, data = data,
 ```
 
 # Differential vulnerability of neurons to hydrogen peroxide
+
 ## Supplementary Tables 3
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
@@ -223,7 +226,7 @@ dunnTest(neuron_normalized ~ neuron,
          method="bonferroni")
 ```
 
-## Estimation statistics
+Estimation statistics
 
 0 micromollar
 
@@ -318,6 +321,7 @@ shared.control.mean_diff
 ```
 
 # No overt difference in mitochondrial ROS production observed between neurons
+
 ## Supplementary Tables 4
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
@@ -746,7 +750,8 @@ ggsave(here("plots", "arbor_average_segmentation_per_neuron_PD_nonPD-Gardner-Alt
 
 ```
 
-## PD-vulnerable neurons have a higher proportion of varicosities that are positive for Syt1
+# PD-vulnerable neurons have a higher proportion of varicosities that are positive for Syt1
+
 ## SupplementaryTables 7
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
