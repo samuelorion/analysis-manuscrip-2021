@@ -1,9 +1,16 @@
 ---
 title: "Supplementary data and figures"
 output:
+  word_document:
+    toc: yes
+    toc_depth: '2'
   pdf_document:
-    toc: true
+    toc: yes
     toc_depth: 2
+  html_document:
+    toc: yes
+    toc_depth: '2'
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -16,11 +23,13 @@ library(rstatix)
 library(see)
 library(ggridges)
 library(spatstat)
+library(ggpubr)
+library(rstatix)
 ```
 
 # PD-vulnerable neurons are less resilient to cell stress induced by hydrogen peroxide
 
-## Supplementary Tables 1
+## Figure 1-1
 
 Nuclei (DAPI) count
 
@@ -79,6 +88,14 @@ ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) +
 ggsave(here("plots", "count_dapi.pdf"))
 
 ```
+Normality? 
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+ggqqplot(data$dapi_normalized)
+
+data %>%
+  group_by(hydrogen_peroxide) %>% 
+  shapiro_test(dapi_normalized)
+```
 
 Kurskal-Wallis
 
@@ -95,7 +112,7 @@ dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni"
 
 Neuron count
 
-## Supplementary Tables 2
+## Figure 2-1
 
 ```{r echo= FALSE, error = FALSE, message = FALSE, warning= FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(hydrogen_peroxide, neuron_normalized)) + 
@@ -142,7 +159,7 @@ dunnTest(neuron_normalized ~ hydrogen_peroxide, data = data,
 
 # Differential vulnerability of neurons to hydrogen peroxide
 
-## Supplementary Tables 3
+## Figure 3-1
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(neuron, neuron_normalized, fill = neuron)) + 
@@ -322,7 +339,7 @@ shared.control.mean_diff
 
 # No overt difference in mitochondrial ROS production observed between neurons
 
-## Supplementary Tables 4
+## Figure 4-1
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 
@@ -428,7 +445,7 @@ t.test(relative_oxidation ~ type, data = data_for_plotting_2)
 
 ### Intermitochondrial distance (roGFP)
 
-## Supplementary Tables 5
+## Figure 4-2
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data <- 
@@ -465,7 +482,7 @@ Estimation statistics --- not applicable
 
 # PD-vulnerable neurons have large axonal domains, that are globally more complex than PD-resilient neurons
 
-## Supplementary Tables 6
+## Figure 6-1
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data <- 
@@ -752,7 +769,7 @@ ggsave(here("plots", "arbor_average_segmentation_per_neuron_PD_nonPD-Gardner-Alt
 
 # PD-vulnerable neurons have a higher proportion of varicosities that are positive for Syt1
 
-## SupplementaryTables 7
+## Figure 7-1
 
 ```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data_selected <- 
