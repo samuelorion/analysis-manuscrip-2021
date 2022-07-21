@@ -1,5 +1,5 @@
 ---
-title: "Supplementary data and figures"
+title: "Extended data"
 output:
   word_document:
     toc: yes
@@ -7,10 +7,6 @@ output:
   pdf_document:
     toc: yes
     toc_depth: 2
-  html_document:
-    toc: yes
-    toc_depth: '2'
-    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -25,15 +21,17 @@ library(ggridges)
 library(spatstat)
 library(ggpubr)
 library(rstatix)
+library(knitr)
 ```
 
+\newpage
 # PD-vulnerable neurons are less resilient to cell stress induced by hydrogen peroxide
 
-## Figure 1-1
+## Figure 2-1
 
 Nuclei (DAPI) count
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE}
 
 data <- 
   read_csv(here("derived-data", "count.csv")) %>% 
@@ -56,7 +54,7 @@ data <-
 
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="50%"}
+```{r echo=FALSE, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, paged.print=FALSE, out.width="50%"}
 
 ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) + 
   geom_point(aes(color = type), 
@@ -88,8 +86,10 @@ ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) +
 ggsave(here("plots", "count_dapi.pdf"))
 
 ```
-Normality? 
-```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+
+```{r eval=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment=NA, include=FALSE, out.width="50%"}
+#nomarlity test 
+
 ggqqplot(data$dapi_normalized)
 
 data %>%
@@ -99,22 +99,25 @@ data %>%
 
 Kurskal-Wallis
 
-```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r, echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(dapi_normalized ~ hydrogen_peroxide, data = data)
 ```
 
 Dunn test
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
-dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni")
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+out <- dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni")
 
+out$res %>% 
+  knitr::kable(align = "r") 
 ```
 
+\newpage
 Neuron count
 
-## Figure 2-1
+## Figure 2-2
 
-```{r echo= FALSE, error = FALSE, message = FALSE, warning= FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error = FALSE, message = FALSE, warning= FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(hydrogen_peroxide, neuron_normalized)) + 
   geom_point(aes(color = type), 
              width = 0.3, 
@@ -146,22 +149,25 @@ ggsave(here("plots", "count_neuron.pdf"))
 
 Kurskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(neuron_normalized ~ hydrogen_peroxide, data = data)
 ```
 
 Dunn test
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+
 dunnTest(neuron_normalized ~ hydrogen_peroxide, data = data,
-         method="bonferroni")
+         method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
+\newpage
 # Differential vulnerability of neurons to hydrogen peroxide
 
 ## Figure 3-1
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(neuron, neuron_normalized, fill = neuron)) + 
   geom_jitter(width = 0.01, height = 0.3, size = 2, alpha = 0.1) +
   theme_bw() +
@@ -189,7 +195,7 @@ Kruskal-Wallis and Dunn test for each concetration
 
 0 micromollar
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 #0 
 kruskal.test(neuron_normalized ~ neuron, 
              data = data %>% 
@@ -198,12 +204,13 @@ kruskal.test(neuron_normalized ~ neuron,
 dunnTest(neuron_normalized ~ neuron, 
          data = data %>% 
                filter(hydrogen_peroxide == "0"),
-         method="bonferroni")
+         method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 100 micromollar
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 # 100 
 kruskal.test(neuron_normalized ~ neuron, 
              data = data %>% 
@@ -212,12 +219,13 @@ kruskal.test(neuron_normalized ~ neuron,
 dunnTest(neuron_normalized ~ neuron, 
          data = data %>% 
                filter(hydrogen_peroxide == "100"),
-         method="bonferroni")
+         method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 150 micromollar
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 #150 
 kruskal.test(neuron_normalized ~ neuron, 
              data = data %>% 
@@ -226,12 +234,13 @@ kruskal.test(neuron_normalized ~ neuron,
 dunnTest(neuron_normalized ~ neuron, 
          data = data %>% 
                filter(hydrogen_peroxide == "150"),
-         method="bonferroni")
+         method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 200 micromollar
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 # 200 
 kruskal.test(neuron_normalized ~ neuron, 
              data = data %>% 
@@ -240,14 +249,15 @@ kruskal.test(neuron_normalized ~ neuron,
 dunnTest(neuron_normalized ~ neuron, 
          data = data %>% 
                filter(hydrogen_peroxide == "200"),
-         method="bonferroni")
+         method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 Estimation statistics
 
 0 micromollar
 
-```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r, echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data %>% 
   filter(hydrogen_peroxide == "0") %>% 
@@ -265,12 +275,14 @@ plot(shared.control.mean_diff,
 
 ggsave(here("plots", "count_neuron_estimation_0.pdf"))
 
-shared.control.mean_diff 
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c") 
 ```
 
 100 micromollar
 
-```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r, echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data %>% 
   filter(hydrogen_peroxide == "100") %>% 
@@ -288,12 +300,14 @@ plot(shared.control.mean_diff,
 
 ggsave(here("plots", "count_neuron_estimation_100.pdf"))
 
-shared.control.mean_diff 
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c") 
 ```
 
 150 micromollar
 
-```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r, echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data %>% 
   filter(hydrogen_peroxide == "150") %>% 
@@ -311,12 +325,14 @@ plot(shared.control.mean_diff,
 
 ggsave(here("plots", "count_neuron_estimation_150.pdf"))
 
-shared.control.mean_diff 
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c") 
 ```
 
 200 micromollar
 
-```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment=NA, out.width="50%"}
 shared.control <- 
   data %>% 
   filter(hydrogen_peroxide == "200") %>% 
@@ -334,21 +350,24 @@ plot(shared.control.mean_diff,
 
 ggsave(here("plots", "count_neuron_estimation_200.pdf"))
 
-shared.control.mean_diff 
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c") 
 ```
 
+\newpage
 # No overt difference in mitochondrial ROS production observed between neurons
 
-## Figure 4-1
+## Figure 4-2
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 
 data <- 
   read_csv(here("derived-data", "derived-roGFP.csv"))
 
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data_for_plotting_2 <- 
 data %>% 
   group_by(ROI, neuron, field, type) %>% 
@@ -373,21 +392,22 @@ ggsave(here("plots", "roGFP_4.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(relative_oxidation ~ neuron, 
              data = data_for_plotting_2)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 dunnTest(relative_oxidation ~ neuron, 
-             data = data_for_plotting_2, method="bonferroni")
+             data = data_for_plotting_2, method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 Estimation statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data_for_plotting_2 %>% 
   dabest(neuron, relative_oxidation, 
@@ -403,12 +423,14 @@ plot(shared.control.mean_diff,
 
 ggsave(here("Plots", "roGFP_5.pdf"))
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 Comparing axonal vs std (note - very small effect - significant)
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data_for_plotting_2, aes(field, relative_oxidation)) +
   geom_boxplot(width = 0.2, alpha = 0.1, aes(fill = type), position=position_dodge(.3), outlier.alpha = 0)
 
@@ -418,19 +440,19 @@ std_only <- data_for_plotting_2 %>% filter(field == "axonal")
 
 Welch Two Sample t-test - Axonal only
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 t.test(relative_oxidation ~ type, data = axonal_only)
 ```
 
 Welch Two Sample t-test - STD only
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 t.test(relative_oxidation ~ type, data = std_only)
 ```
 
 Comparing vulnerable vs non-vulnerable - significant by very small effect size
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data_for_plotting_2, aes(type, relative_oxidation, fill = type)) +
   #geom_point(size = 1, alpha = 0.3, aes(color = field), position = position_jitterdodge(0.05)) +
   geom_boxplot(width = 0.2, alpha = 0.1)
@@ -439,15 +461,16 @@ ggplot(data_for_plotting_2, aes(type, relative_oxidation, fill = type)) +
 
 Welch Two Sample t-test
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 t.test(relative_oxidation ~ type, data = data_for_plotting_2)
 ```
 
+\newpage
 ### Intermitochondrial distance (roGFP)
 
-## Figure 4-2
+## Figure 4-3
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment=NA, out.width="50%"}
 data <- 
   read_csv(here("derived-data", "derived-mito-distance.csv")) %>% 
   pivot_longer(cols = 1:7, names_to ="neuron", values_to = "distance_um")
@@ -473,18 +496,19 @@ sd(data$distance_um, na.rm=TRUE)
 
 Kurskal-Wallis
 
-```{r 3, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r 3, echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(distance_um ~ neuron, data = data)
 
 ```
 
 Estimation statistics --- not applicable
 
+\newpage
 # PD-vulnerable neurons have large axonal domains, that are globally more complex than PD-resilient neurons
 
 ## Figure 6-1
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data <- 
   read_csv(here("derived-data", "trace.csv")) %>% 
   mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"))) %>% 
@@ -520,21 +544,22 @@ ggsave(here("plots", "arbor_per_neuron.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(axon_area_per_neuron ~ neuron, 
              data = data)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 dunnTest(axon_area_per_neuron ~ neuron, 
-             data = data, method="bonferroni")
+             data = data, method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 Estimation statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data %>%
   dabest(neuron, axon_area_per_neuron, 
@@ -547,12 +572,14 @@ shared.control.mean_diff <- shared.control %>% mean_diff()
 plot(shared.control.mean_diff, 
      rawplot.type = "swarmplot")
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 _PD-vulnerable vs PD-resilient_
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ## for PD vs NON PD
 
 ggplot(data, aes(type, axon_area_per_neuron)) +
@@ -581,15 +608,15 @@ two.group.unpaired <-
          idx = c("non-vulnerable", "pd-vulnerable"), 
          paired = FALSE)
 
-two.group.unpaired 
+#two.group.unpaired 
 two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
-two.group.unpaired.meandiff
+#two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
 ggsave(here("plots", "arbor_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"))
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(neuron, count_per_neuron, fill = neuron)) + 
   geom_jitter(width = 0.01, height = 0.3, size = 2, alpha = 0.1) +
   theme_bw() +
@@ -610,21 +637,22 @@ ggsave(here("plots", "arbor_segmentation_per_neuron.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(count_per_neuron ~ neuron, 
              data = data)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 dunnTest(count_per_neuron ~ neuron, 
-             data = data, method="bonferroni")
+             data = data, method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 Estimation statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data %>%
   dabest(neuron, count_per_neuron, 
@@ -637,12 +665,14 @@ shared.control.mean_diff <- shared.control %>% mean_diff()
 plot(shared.control.mean_diff, 
      rawplot.type = "swarmplot")
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 _PD-vulnerable vs PD-resilient_
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(type, count_per_neuron)) +
   theme_classic() +
   geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
@@ -669,9 +699,9 @@ two.group.unpaired <-
          idx = c("non-vulnerable", "pd-vulnerable"), 
          paired = FALSE)
 
-two.group.unpaired 
+#two.group.unpaired 
 two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
-two.group.unpaired.meandiff
+#two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
 ggsave(here("plots", "segmentations_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"))
@@ -679,7 +709,7 @@ ggsave(here("plots", "segmentations_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"
 
 Average segmentation length (µm)
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(neuron, `Average Size`, fill = neuron)) + 
   geom_jitter(width = 0.01, height = 0.3, size = 2, alpha = 0.1) +
   theme_bw() +
@@ -700,21 +730,22 @@ ggsave(here("plots", "arbor_average_segmentation_per_neuron.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(`Average Size` ~ neuron, 
              data = data)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 dunnTest(`Average Size` ~ neuron, 
-             data = data, method="bonferroni")
+             data = data, method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 Estimation statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data %>%
   dabest(neuron, `Average Size`, 
@@ -727,12 +758,14 @@ shared.control.mean_diff <- shared.control %>% mean_diff()
 plot(shared.control.mean_diff, 
      rawplot.type = "swarmplot")
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 _PD-vulnerable vs PD-resilient_
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data, aes(type, `Average Size`)) +
   theme_classic() +
   geom_boxplot(width = 0.2, alpha = 0.1, outlier.alpha = 0, position = position_nudge(x = -0.13)) +
@@ -758,20 +791,21 @@ two.group.unpaired <-
          idx = c("non-vulnerable", "pd-vulnerable"), 
          paired = FALSE)
 
-two.group.unpaired 
+#two.group.unpaired 
 two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
-two.group.unpaired.meandiff
+#two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
 ggsave(here("plots", "arbor_average_segmentation_per_neuron_PD_nonPD-Gardner-Altman plot.pdf"))
 
 ```
 
+\newpage
 # PD-vulnerable neurons have a higher proportion of varicosities that are positive for Syt1
 
 ## Figure 7-1
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data_selected <- 
   read_csv(here("derived-data", "derived-varicosity-data.csv")) %>% 
   filter(between(Feret, 2, 25)) %>% 
@@ -789,7 +823,7 @@ data_percentage_syt1_positive <-
   ungroup()
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 distribution_plot <- 
   ggplot(data_selected, aes(Mean,neuron, fill = neuron)) +
    geom_density_ridges2(jittered_points = TRUE, 
@@ -813,7 +847,7 @@ distribution_plot +
 ggsave(here("plots", "varicosites_ridges.pdf"))
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 ggplot(data_percentage_syt1_positive, 
        aes(neuron, percentage_syt1_positive)) +
   geom_jitter(width = 0.03, size = 3, alpha = 0.1) +
@@ -829,19 +863,20 @@ ggsave(here("plots", "varicosites_percentage_positive.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(percentage_syt1_positive ~ neuron, data = data_percentage_syt1_positive)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
-dunnTest(percentage_syt1_positive ~ neuron, data = data_percentage_syt1_positive, method="bonferroni")
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(percentage_syt1_positive ~ neuron, data = data_percentage_syt1_positive, method="bonferroni")$res %>% 
+  knitr::kable(align = "r") 
 ```
 
 Estimation statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   data_percentage_syt1_positive %>%
   dabest(neuron, percentage_syt1_positive, 
@@ -854,12 +889,14 @@ shared.control.mean_diff <- shared.control %>% mean_diff()
 plot(shared.control.mean_diff, 
      rawplot.type = "swarmplot")
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 _PD-vulnerable vs PD-resilient_
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data_percentage_syt1_positive <- 
   data_percentage_syt1_positive %>% 
   mutate(type = case_when(
@@ -896,15 +933,15 @@ two.group.unpaired <-
          idx = c("non-vulnerable", "pd-vulnerable"), 
          paired = FALSE)
 
-two.group.unpaired 
+#two.group.unpaired 
 two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
-two.group.unpaired.meandiff
+#two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
 ggsave(here("plots", "percentage_syt1_positive_PD_nonPD-Gardner-Altman plot.pdf"))
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 data_selected_nearest_neighbour <- 
   data_selected %>% 
   select(c(neuron, image, X, Y, syt_status, skeleton_axon_pixels, Mean, Area, Feret, MinFeret)) %>% 
@@ -941,7 +978,7 @@ ggplot(varicosity_nn_length, aes((nearest_varicosity/4.83),neuron, fill = neuron
 ggsave(here("plots", "varicosites_log_nearest_var.pdf"))
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 mean_varicosity_nn_length <- 
   varicosity_nn_length %>% 
   select(c(neuron, image, nearest_varicosity)) %>% 
@@ -964,19 +1001,20 @@ ggsave(here("plots", "varicosites_nearest_var.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(mean_nearest_varicsotiey ~ neuron, data = mean_varicosity_nn_length)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
-dunnTest(mean_nearest_varicsotiey ~ neuron, data = mean_varicosity_nn_length, method="bonferroni")  
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(mean_nearest_varicsotiey ~ neuron, data = mean_varicosity_nn_length, method="bonferroni")$res %>% 
+  knitr::kable(align = "r")   
 ```
 
 Estimation Statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   mean_varicosity_nn_length %>%
   dabest(neuron, mean_nearest_varicsotiey, 
@@ -989,12 +1027,14 @@ shared.control.mean_diff <- shared.control %>% mean_diff()
 plot(shared.control.mean_diff, 
      rawplot.type = "swarmplot")
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 _PD-vulnerable vs PD-resilient_
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 mean_varicosity_nn_length <- 
   mean_varicosity_nn_length %>% 
     mutate(type = case_when(
@@ -1032,15 +1072,15 @@ two.group.unpaired <-
          idx = c("non-vulnerable", "pd-vulnerable"), 
          paired = FALSE)
 
-two.group.unpaired 
+#two.group.unpaired 
 two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
-two.group.unpaired.meandiff
+#two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
 ggsave(here("plots", "varicosites_nearest_var_PD_nonPD-Gardner-Altman plot.pdf"))
 ```
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 mean_varicosity_lengthpervar_length <- 
   varicosity_nn_length %>% 
   select(c(neuron, image, axon_per_var_px)) %>% 
@@ -1065,19 +1105,20 @@ ggsave(here("plots", "varicosites_var_div_axon.pdf"))
 
 Kruskal-Wallis
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 kruskal.test(mean_axon_per_var_px ~ neuron, data = mean_varicosity_lengthpervar_length)
 ```
 
 Dunn
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
-dunnTest(mean_axon_per_var_px ~ neuron, data = mean_varicosity_lengthpervar_length, method="bonferroni") 
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+dunnTest(mean_axon_per_var_px ~ neuron, data = mean_varicosity_lengthpervar_length, method="bonferroni")$res %>% 
+  knitr::kable(align = "r")  
 ```
 
 Estimation Statistics
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 shared.control <- 
   mean_varicosity_lengthpervar_length %>%
   dabest(neuron, mean_axon_per_var_px, 
@@ -1090,12 +1131,14 @@ shared.control.mean_diff <- shared.control %>% mean_diff()
 plot(shared.control.mean_diff, 
      rawplot.type = "swarmplot")
 
-shared.control.mean_diff
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c")
 ```
 
 _PD-vulnerable vs PD-resilient_
 
-```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+```{r echo=FALSE, fig.align="center", error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
 mean_varicosity_lengthpervar_length <- 
   mean_varicosity_lengthpervar_length %>% 
     mutate(type = case_when(
@@ -1132,9 +1175,9 @@ two.group.unpaired <-
          idx = c("non-vulnerable", "pd-vulnerable"), 
          paired = FALSE)
 
-two.group.unpaired 
+#two.group.unpaired 
 two.group.unpaired.meandiff <- mean_diff(two.group.unpaired)
-two.group.unpaired.meandiff
+#two.group.unpaired.meandiff
 
 plot(two.group.unpaired.meandiff, color.column = type)
 ggsave(here("plots", "varicosites_var_div_axon_PD_nonPD-Gardner-Altman plot.pdf"))

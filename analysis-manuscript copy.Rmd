@@ -1,0 +1,159 @@
+---
+title: "Supplementary data and figures"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(dabestr)
+library(FSA)
+library(rstatix)
+library(see)
+library(ggridges)
+library(spatstat)
+library(ggpubr)
+library(rstatix)
+```
+
+# PD-vulnerable neurons are less resilient to cell stress induced by hydrogen peroxide
+
+## Figure 1-1
+
+Nuclei (DAPI) count
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+data <- 
+  read_csv(here("derived-data", "count.csv")) %>% 
+   mutate(hydrogen_peroxide = as.factor(hydrogen_peroxide)) %>% 
+   mutate(neuron = as.factor(neuron)) %>% 
+  mutate(neuron = fct_relevel(neuron, c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"))) %>% 
+   mutate(type = case_when(
+     neuron == "SN" ~ "pd-vulnerable", 
+     neuron == "LC" ~ "pd-vulnerable",
+     neuron == "R" ~ "pd-vulnerable",
+     neuron == "DMV" ~ "pd-vulnerable", 
+     neuron == "VTA" ~ "non-vulnerable",
+     neuron == "XII" ~ "non-vulnerable", 
+     neuron == "STR" ~ "non-vulnerable")) %>% 
+  group_by(image, neuron) %>% 
+  mutate(neuron_normalized = neuron_n / (mean(neuron_n[hydrogen_peroxide == 0], na.rm = TRUE))) %>% 
+  mutate(dapi_normalized = dapi_n / (mean(dapi_n[hydrogen_peroxide == 0], na.rm = TRUE))) %>% 
+  ungroup() %>% 
+  select(neuron, hydrogen_peroxide, type, neuron_normalized, dapi_normalized)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="50%"}
+
+ggplot(data, aes(hydrogen_peroxide, dapi_normalized)) + 
+  geom_point(aes(color = type), 
+             width = 0.3, 
+             size = 2, 
+             alpha = 0.1, 
+             position = position_dodge(width=1.3)) +
+  theme_bw() +
+  labs(
+    x = "", 
+    y = "normalized number of nuclei") +
+  geom_boxplot(aes(color = type), 
+               width = 0.2, 
+               alpha = 0.01,
+               position=position_dodge(width=0.8)) +
+  theme(
+    legend.position = "none") +
+  theme_classic() + 
+  geom_hline(
+    yintercept=1, 
+    color = "red", 
+    size=0.5, 
+    alpha = 0.2) +
+  geom_boxplot(fill = "Black", width = 0.1, 
+               alpha = 0.05, 
+               outlier.alpha = 0) +
+  ylim(0, 2)
+
+ggsave(here("plots", "count_dapi.pdf"))
+
+```
+
+```{r eval=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment=NA, include=FALSE, out.width="50%"}
+#nomarlity test 
+
+ggqqplot(data$dapi_normalized)
+
+data %>%
+  group_by(hydrogen_peroxide) %>% 
+  shapiro_test(dapi_normalized)
+```
+
+Kurskal-Wallis
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+
+kruskal.test(dapi_normalized ~ hydrogen_peroxide, data = data)
+
+```
+
+## Dunn test
+
+```{r echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+out <- dunnTest(dapi_normalized ~ hydrogen_peroxide, data = data, method = "bonferroni")
+
+library(knitr)
+
+knitr::kable(out$res, align = "rrrr")
+
+out$res %>% 
+  knitr::kable(align = "r") 
+
+```
+
+
+
+Estimation statistics
+
+0 micromollar
+
+```{r, echo=FALSE, error=FALSE, message=FALSE, warning=FALSE, comment = NA, out.width="50%"}
+shared.control <- 
+  data %>% 
+  filter(hydrogen_peroxide == "0") %>% 
+  drop_na() %>% 
+  dabest(neuron, neuron_normalized, 
+         idx = c("SN", "VTA", "LC", "R", "DMV", "XII", "STR"),
+         paired = FALSE
+         )
+
+shared.control.mean_diff <- shared.control %>% mean_diff()
+
+plot(shared.control.mean_diff, 
+     rawplot.type = "swarmplot", 
+     effsize.ylim = c(-0.5, 1))
+
+
+shared.control.mean_diff$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high) %>% 
+  knitr::kable(digits = 3, align = "c") 
+ 
+```
+
+```{r}
+output <- shared.control.mean_diff 
+
+output
+```
+```{r}
+output$result
+table_out <- output$result %>% 
+  select(control_group, test_group, difference, bca_ci_low, bca_ci_high)
+
+table_out %>% 
+  knitr::kable(digits = 3, align = "c") 
+```
+
